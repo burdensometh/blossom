@@ -165,6 +165,34 @@ print(agg_result)
 print(grouped_count)
 ```
 
+### 版本化外部标注关联
+
+外部标注表通常按样本ID持续修订，简单使用`add_metadata`会保留已经过时的标签。框架提供版本化标注关联，按样本ID选择指定发布版本（release）内的最新修订（revision），并根据审核状态直接改写数据集中的标签、训练权重与样本集合，而不是只附加一张审计表。
+
+```python
+from blossom import (
+    AnnotationJoinConfig,
+    VersionedAnnotationTable,
+    AnnotationOrphanPolicy,
+)
+
+# 标注表保留同一发布内的全部修订，关联时自动选取每个样本的最新修订
+table = VersionedAnnotationTable.from_json("annotations.jsonl")
+joined = dataset.apply_annotations(
+    table,
+    AnnotationJoinConfig(
+        release="2026-11",
+        orphan_policy=AnnotationOrphanPolicy.ERROR,  # 标注表中的孤立ID直接报错
+    ),
+)
+
+# approved：用最新修订替换 label/weight；pending 默认排除（可配置保留及权重）
+# rejected/revoked：样本直接移出训练集，撤销不会回退到早期的通过状态
+# 关联后可通过 annotation_releases() 查看所用标注版本，版本信息随 JSON/Parquet 写回再读仍然保留
+print(joined.annotation_releases())
+joined.write_json("annotated.jsonl")
+```
+
 ## Operator
 
 Operator（算子）是数据处理的核心单元，封装了特定的数据处理逻辑。框架提供了三种基本类型的算子：

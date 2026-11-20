@@ -2,7 +2,19 @@ from .context import Context
 from .dataframe import DataFrame
 from .dataset import create_dataset, load_dataset, DatasetEngine, DataType, Dataset
 from .log import logger
+from .annotation import (
+    AnnotationJoinConfig,
+    AnnotationOrphanPolicy,
+    AnnotationRecord,
+    AnnotationReport,
+    AnnotationUnannotatedPolicy,
+    OrphanAnnotationError,
+    ReviewStatus,
+    UnannotatedError,
+    VersionedAnnotationTable,
+)
 from .op import (
+    AnnotationJoinOperator,
     Operator,
     MapOperator,
     FilterOperator,
@@ -25,6 +37,12 @@ from .schema import (
 )
 
 __all__ = [
+    "AnnotationJoinConfig",
+    "AnnotationJoinOperator",
+    "AnnotationOrphanPolicy",
+    "AnnotationRecord",
+    "AnnotationReport",
+    "AnnotationUnannotatedPolicy",
     "ChatSchema",
     "Context",
     "CustomSchema",
@@ -37,10 +55,14 @@ __all__ = [
     "MapOperator",
     "MetricFilterOperator",
     "Operator",
+    "OrphanAnnotationError",
+    "ReviewStatus",
     "RowSchema",
     "Schema",
     "TextSchema",
     "TransformOperator",
+    "UnannotatedError",
+    "VersionedAnnotationTable",
     "context_filter_operator",
     "context_map_operator",
     "context_transform_operator",

@@ -165,6 +165,42 @@ print(agg_result)
 print(grouped_count)
 ```
 
+### Versioned external annotation joins
+
+External annotation tables are revised continuously per sample ID, so a plain
+`add_metadata` merge keeps labels that have since been corrected or revoked.
+The framework provides a versioned annotation join that selects the newest
+revision of every sample within a named release and rewrites the dataset's
+labels, training weights and population according to the review status —
+rather than merely attaching an audit table.
+
+```python
+from blossom import (
+    AnnotationJoinConfig,
+    VersionedAnnotationTable,
+    AnnotationOrphanPolicy,
+)
+
+# The table keeps every revision; the join picks the newest in-release one.
+table = VersionedAnnotationTable.from_json("annotations.jsonl")
+joined = dataset.apply_annotations(
+    table,
+    AnnotationJoinConfig(
+        release="2026-11",
+        orphan_policy=AnnotationOrphanPolicy.ERROR,  # fail on orphan IDs
+    ),
+)
+
+# approved: label/weight are replaced by the newest revision
+# pending: excluded by default (configurable retention and weight)
+# rejected/revoked: the sample leaves the training population; a revocation
+#                   never falls back to an earlier approved revision
+# The applied release is recoverable via annotation_releases() and survives
+# JSON/Parquet write and re-read on every retained row.
+print(joined.annotation_releases())
+joined.write_json("annotated.jsonl")
+```
+
 ## Operator
 
 Operators are the core units of data processing, encapsulating specific data processing logic. The framework provides three basic types of operators:

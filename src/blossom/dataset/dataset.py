@@ -1,11 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 from blossom.context.context import Context
 from blossom.dataframe.aggregate import AggregateFunc
 from blossom.dataframe.data_handler import DataHandler
 from blossom.op.operator import Operator
 from blossom.schema.schema import Schema
+
+if TYPE_CHECKING:
+    from blossom.annotation.association import AnnotationJoinConfig
+    from blossom.annotation.table import VersionedAnnotationTable
 
 
 class Dataset(ABC):
@@ -298,6 +302,52 @@ class Dataset(ABC):
             A new dataset with the specified metadata keys dropped
         """
         pass
+
+    def apply_annotations(
+        self,
+        table: "VersionedAnnotationTable",
+        config: Optional["AnnotationJoinConfig"] = None,
+    ) -> "Dataset":
+        """
+        Join the dataset with a versioned external annotation release.
+
+        This is not a metadata-only merge: the newest in-release revision of
+        every sample replaces its label and training weight, and samples whose
+        newest revision rejects or revokes the annotation (or is still pending
+        when pending records are excluded) are removed from the dataset.
+
+        Args:
+            table: Versioned table holding the full annotation revision
+                history.
+            config: Optional join configuration (release selection, orphan and
+                unannotated policies, weight defaults, ...).
+
+        Returns:
+            A new dataset whose labels, weights and population reflect the
+            selected annotation release. Each retained item records the exact
+            release/revision applied in its metadata, which survives
+            JSON/Parquet write and re-read.
+        """
+        from blossom.annotation import AnnotationJoinConfig
+        from blossom.op.common.annotation_join_operator import (
+            AnnotationJoinOperator,
+        )
+
+        return self.execute(
+            [AnnotationJoinOperator(table, config or AnnotationJoinConfig())]
+        )
+
+    def annotation_releases(self) -> list[str]:
+        """
+        Return the annotation releases currently proven on this dataset.
+
+        Reads the annotation provenance written by :meth:`apply_annotations`,
+        including after a JSON/Parquet round trip, so the annotation version
+        behind stored training data is always recoverable.
+        """
+        from blossom.annotation import collect_annotation_releases
+
+        return collect_annotation_releases(self.collect())
 
     @abstractmethod
     def sum(self, func: Callable[[Schema], Union[int, float]]) -> Union[int, float]:
