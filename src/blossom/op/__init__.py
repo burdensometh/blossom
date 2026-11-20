@@ -12,6 +12,7 @@ from .chat.chat_reasoning_content_merger import ChatReasoningContentMerger
 from .chat.chat_repetition_filter import ChatRepetitionFilter
 from .chat.chat_translator import ChatTranslator
 from .chat.chat_verify_distiller import ChatVerifyDistiller
+from .common.bin_balanced_sampler import BinBalancedSampler
 from .common.equal_width_binner import EqualWidthBinner
 from .common.llm_judge_filter import LLMJudgeFilter
 from .common.metadata_clearer import MetadataClearer
@@ -37,6 +38,7 @@ from .util.content_embedder import ContentEmbedder
 from .util.content_translator import ContentTranslator
 
 __all__ = [
+    "BinBalancedSampler",
     "CharRepetitionFilter",
     "ChatContentFilter",
     "ChatContentReplacer",
